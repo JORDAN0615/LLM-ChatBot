@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot & Google Maps Route</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB48k5aaUnPy6nk6kCieR5O3oZNkIGP7c0&callback=initMap" async defer></script>
+    <style>
+        body {
+            background-color: #333; /* 深灰色背景 */
+            color: white; /* 白色文字 */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #chat-container {
+            width: 40%; /* 將對話框放大到頁面的 90% 寬度 */
+            padding: 20px;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); /* 白色阴影 */
+            text-align: center;
+            margin-left: 0px; /* 與地圖間的間距 */
+            float: right; /* 對話框放在右側 */
+        }
+
+
+        #chat-box {
+            height: 70vh;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1); /* 半透明白色背景 */
+            text-align: left;
+        }
+
+        #user-input {
+            width: calc(100%); /* 計算輸入框寬度，扣除兩側 padding */
+            padding: 10px;
+            border: none;
+            border-radius: 10px; /* 圆角 */
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1); /* 半透明白色背景 */
+            color: white; /* 白色文字 */
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px; /* 圆角 */
+            background-color: #4CAF50; /* 绿色按钮 */
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049; /* 深绿色按钮 */
+        }
+
+        #map-container {
+            height: 90vh;
+            padding: auto;
+            width: 50%;
+            float: left;
+            margin-right: 50px;
+        }
+
+        #map {
+            height: 100%;
+        }
+
+        #duration {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 10px;
+        }
+</style>
+</head>
+<body>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="duration"></div>
+    </div>
+    <script>
+        var map, directionsService, directionsRenderer, userLocationMarker;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 14
+            });
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer();
+            directionsRenderer.setMap(map);
+
+            // 獲取用戶的當前位置
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    map.setCenter(userLocation);
+                    userLocationMarker = new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        title: 'Your Location'
+                    });
+                }, function() {
+                    handleLocationError(true, map.getCenter());
+                });
+            } else {
+                // 瀏覽器不支持地理位置
+                handleLocationError(false, map.getCenter());
+            }
+
+            // 添加地圖點擊事件監聽器
+            map.addListener('click', function(event) {
+                calculateRoute(event.latLng);
+            });
+        }
+
+        function calculateRoute(destination) {
+            if (!destination) return;
+            
+            // 設置路線請求
+            var request = {
+                origin: userLocationMarker.getPosition(), // 起點位置為用戶的當前位置
+                destination: destination,
+                travelMode: 'DRIVING'
+            };
+
+            // 發送路線請求
+            directionsService.route(request, function(result, status) {
+                if (status == 'OK') {
+                    directionsRenderer.setDirections(result);
+                    var route = result.routes[0];
+                    var duration = route.legs[0].duration.text;
+                    document.getElementById('duration').innerHTML = 'Estimated time: ' + duration;
+                } else {
+                    window.alert('Directions request failed due to ' + status);
+                }
+            });
+        }
+
+        function handleLocationError(browserHasGeolocation, userLocation) {
+            var infoWindow = new google.maps.InfoWindow();
+            infoWindow.setPosition(userLocation);
+            infoWindow.setContent(browserHasGeolocation ?
+                                  'Error: The Geolocation service failed.' :
+                                  'Error: Your browser doesn\'t support geolocation.');
+            infoWindow.open(map);
+        }
+    </script>
+
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <input type="text" id="user-input" placeholder="Type a message..." onkeydown="if(event.keyCode==13){sendMessage();}">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function sendMessage() {
+            var message = document.getElementById("user-input").value;
+            document.getElementById("chat-box").innerHTML += "<p>You: " + message + "</p>";
+            
+            // Send user input to Flask API
+            fetch('/LLMChat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                var chatBotResponse = data.response;
+                document.getElementById("chat-box").innerHTML += "<p>" + chatBotResponse + "</p>";
+                document.getElementById("user-input").value = ''; // 清空输入框
+                // 自动滚动到底部
+                var chatBox = document.getElementById("chat-box");
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+    
+</body>
+</html>
