@@ -12,9 +12,7 @@ app = Flask(__name__)
 load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
-
 model = ChatOpenAI(model="gpt-3.5-turbo")
-
 
 @app.route('/')
 def home():

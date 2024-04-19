@@ -10,6 +10,7 @@ openai.api_key = os.environ['OPENAI_API_KEY']
 
 from langchain.tools import tool
 import requests
+from flask import Flask, render_template, request, jsonify
 # from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.tools.render import format_tool_to_openai_function
@@ -19,6 +20,13 @@ from langchain_openai import ChatOpenAI
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.schema.agent import AgentFinish
 from langchain.schema.runnable import RunnablePassthrough
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 class OpenGoogleMapInput:
     def __init__(self, latitude: float, longitude: float):
         self.latitude = latitude
@@ -32,9 +40,10 @@ def get_Info(latitude: float, longitude: float) -> dict:
 
     params = {
         'location': f"{latitude},{longitude}",
-        'radius': 1000,
-        'type': 'restaurant',
+        'radius': 500,
+        'type': ['restaurant', 'cafe', 'bar', 'tourist_attraction'],
         'key': api_key,
+        'language': 'zh-TW'
     }
     # Make the request
     response = requests.get(BASE_URL, params=params)
@@ -54,10 +63,10 @@ def get_Info(latitude: float, longitude: float) -> dict:
             }
             restaurants.append(restaurant_info)
             count = count + 1
-        return f'There is some nice {restaurants}°'
+            
+        return f'附近有一些不錯的餐廳可以去試試看，包括{restaurants[0]["name"]}({restaurants[0]["rating"]}星)、{restaurants[1]["name"]}({restaurants[1]["rating"]}星)、{restaurants[2]["name"]}({restaurants[2]["rating"]}星)、{restaurants[3]["name"]}({restaurants[3]["rating"]}星)、{restaurants[4]["name"]}({restaurants[4]["rating"]}星)等。'
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
-
 
 tools = [get_Info]
 
@@ -84,11 +93,25 @@ def run_agent(user_input):
             "intermediate_steps": intermediate_steps
         })
         if isinstance(result, AgentFinish):
-            return result
+            # 將log訊息移除，原先程式碼 return result
+            return intermediate_steps[-1][1]
         tool = {
             "get_Info": get_Info,   
         }[result.tool]
         
         observation = tool.run(result.tool_input)
         intermediate_steps.append((result, observation))
-print(run_agent("西門站附近美食"))
+# chatbot_response = run_agent("台南成功大學附近美食")
+# print(chatbot_response)
+
+@app.route('/LLMChat1', methods=['POST'])
+def LLMChat():
+    user_input = request.json.get('message')
+    if user_input:
+        response = run_agent(user_input)
+        return jsonify({'response': response})
+    else:
+        return jsonify({'response': 'Error: No message provided'}), 400
+
+if __name__ == '__main__':
+    app.run(debug=True)
