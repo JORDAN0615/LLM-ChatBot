@@ -33,7 +33,7 @@ This project implements a chatbot using OpenAI's GPT-3.5 language model integrat
 ## Usage
 1. Run the Flask app:
    ```
-   python app.py
+   python testgooglemapwithLLM.py
    ```
 2. Access the chatbot interface in your web browser at `http://localhost:5000/`.
 3. Enter your query in the chatbox and press Enter.
@@ -41,11 +41,7 @@ This project implements a chatbot using OpenAI's GPT-3.5 language model integrat
 
 ## Credits
 - This project utilizes the LangChain library for building chatbots and integrating with OpenAI.
-- Developed by [Your Name](https://github.com/your_username).
+- Developed by [Jordan Tseng](https://github.com/JORDAN0615).
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-Feel free to customize the README to include more details about your project or provide additional instructions as needed.
