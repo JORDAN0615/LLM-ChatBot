@@ -33,15 +33,15 @@ class OpenGoogleMapInput:
         self.longitude = longitude
 
 @tool
-def get_Info(latitude: float, longitude: float) -> dict:
+def get_Restaurant_Info(latitude: float, longitude: float) -> dict:
     """Fetch current restaurant for given coordinates."""
 
     BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
     params = {
         'location': f"{latitude},{longitude}",
-        'radius': 500,
-        'type': ['restaurant', 'cafe', 'bar', 'tourist_attraction'],
+        'radius': 1000,
+        'type': ['restaurant'],
         'key': api_key,
         'language': 'zh-TW'
     }
@@ -68,16 +68,92 @@ def get_Info(latitude: float, longitude: float) -> dict:
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
-tools = [get_Info]
+
+@tool
+def get_Cafe_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current restaurant for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 2000,
+        'type': ['cafe'],
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        results = response.json()
+        cafe = []
+        count = 0
+        for result in results.get('results', []):
+            if count >= 5:
+                break
+            cafe_info = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根据需要提取其他信息
+            }
+            cafe.append(cafe_info)
+            count = count + 1
+              
+        return f'附近有一些不錯的咖啡廳可以去試試看，包括{cafe[0]["name"]}({cafe[0]["rating"]}星)、{cafe[1]["name"]}({cafe[1]["rating"]}星)、{cafe[2]["name"]}({cafe[2]["rating"]}星)、{cafe[3]["name"]}({cafe[3]["rating"]}星)、{cafe[4]["name"]}({cafe[4]["rating"]}星)等。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+
+
+@tool
+def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current restaurant for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 8000,
+        'type': ['tourist_attraction'],
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        results = response.json()
+        tourist_attraction = []
+        count = 0
+        for result in results.get('results', []):
+            if count >= 5:
+                break
+            tourist_attraction_info = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根据需要提取其他信息
+            }
+            tourist_attraction.append(tourist_attraction_info)
+            count = count + 1
+            
+        return f'附近有一些不錯的旅遊景點可以去試試看，包括{tourist_attraction[0]["name"]}({tourist_attraction[0]["rating"]}星)、{tourist_attraction[1]["name"]}({tourist_attraction[1]["rating"]}星)、{tourist_attraction[2]["name"]}({tourist_attraction[2]["rating"]}星)、{tourist_attraction[3]["name"]}({tourist_attraction[3]["rating"]}星)、{tourist_attraction[4]["name"]}({tourist_attraction[4]["rating"]}星)等。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+
+tools = [get_Cafe_Info, get_Restaurant_Info, get_tourist_attraction_Info]
 
 functions = [format_tool_to_openai_function(f) for f in tools]
-model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0).bind(functions=functions)
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are helpful but sassy assistant"),
+    ("system", "You are helpful assistant who can recommend place to go"),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
+
+
+model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0).bind(functions=functions)
 
 chain = prompt | model | OpenAIFunctionsAgentOutputParser()
 
@@ -93,10 +169,12 @@ def run_agent(user_input):
             "intermediate_steps": intermediate_steps
         })
         if isinstance(result, AgentFinish):
-            # 將log訊息移除，原先程式碼 return result
+            # return result
             return intermediate_steps[-1][1]
         tool = {
-            "get_Info": get_Info,   
+            "get_Restaurant_Info": get_Restaurant_Info, 
+            "get_Cafe_Info": get_Cafe_Info,
+            "get_tourist_attraction_Info": get_tourist_attraction_Info
         }[result.tool]
         
         observation = tool.run(result.tool_input)
