@@ -52,7 +52,7 @@
         }
 
         button {
-            padding: 10px 20px;
+            padding: 10px 15px;
             border: none;
             border-radius: 10px; /* 圆角 */
             background-color: #4CAF50; /* 绿色按钮 */
@@ -88,24 +88,76 @@
             border-radius: 10px;
         }
 
+        .submit-button {
+            background-color: #4CAF50; /* 綠色 */
+            border: none;
+            color: white;
+            padding: 8px 20px; /* 調整按鈕大小 */
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px; /* 調整按鈕與其他元素之間的間距 */
+            cursor: pointer;
+            border-radius: 5px; /* 圓角 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加陰影效果 */
+            transition: background-color 0.3s ease; /* 添加 hover 效果 */
+        }   
+        .submit-button:hover {
+            background-color: #45a049; /* 綠色按鈕 hover 效果 */
+        }
     </style>
 </head>
 <body>
     <div id="map-container">
         <div id="map"></div>
+        <form id="searchForm">
+            <label for="destination">輸入目的地：</label>
+            <input type="text" id="destination" name="destination">
+            <button type="submit" class="submit-button">calculate</button>
+        </form>
         <div id="duration"></div>
     </div>
     <script>
         var map, directionsService, directionsRenderer, userLocationMarker;
 
         function initMap() {
+            var initialLocation = { lat: 25.032969, lng: 121.565418 };
             map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 14
+            zoom: 14
             });
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
 
+            // 添加地圖點擊事件監聽器
+            map.addListener('click', function(event) {
+                calculateRoute(event.latLng);
+            });
+
+            // 監聽表單提交事件
+            document.getElementById('searchForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // 防止表單提交刷新頁面
+                var destination = document.getElementById('destination').value;
+                geocodeAddress(destination);
+            });
+        }
+
+        function geocodeAddress(address) {
+            var geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ 'address': address }, function(results, status) {
+                if (status === 'OK') {
+                    var destination = results[0].geometry.location;
+                    calculateRoute(destination);
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+        }
+
+        function calculateRoute(destination) {
+            if (!destination) return;
+            
             // 獲取用戶的當前位置
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
@@ -119,55 +171,45 @@
                         map: map,
                         title: 'Your Location'
                     });
+
+                    // 設置路線請求
+                    var request = {
+                        origin: userLocation, // 起點位置為用戶的當前位置
+                        destination: destination,
+                        travelMode: 'DRIVING'
+                    };
+
+                    // 發送路線請求
+                    directionsService.route(request, function(result, status) {
+                        if (status == 'OK') {
+                            directionsRenderer.setDirections(result);
+                            var route = result.routes[0];
+                            var duration = route.legs[0].duration.text;
+                                document.getElementById('duration').innerHTML = 'Estimated time: ' + duration;
+                            } else {
+                            window.alert('Directions request failed due to ' + status);
+                        }
+                    });
+
                 }, function() {
                     handleLocationError(true, map.getCenter());
                 });
-            } else {
-                // 瀏覽器不支持地理位置
-                handleLocationError(false, map.getCenter());
+                } else {
+                    // 瀏覽器不支持地理位置
+                    handleLocationError(false, map.getCenter());
+                }
             }
 
-            // 添加地圖點擊事件監聽器
-            map.addListener('click', function(event) {
-                calculateRoute(event.latLng);
-            });
-        }
+            function handleLocationError(browserHasGeolocation, userLocation) {
+                var infoWindow = new google.maps.InfoWindow();
+                infoWindow.setPosition(userLocation);
+                infoWindow.setContent(browserHasGeolocation ?
+                                    'Error: The Geolocation service failed.' :
+                                    'Error: Your browser doesn\'t support geolocation.');
+                infoWindow.open(map);
+            }
 
-        function calculateRoute(destination) {
-            if (!destination) return;
-            
-            // 設置路線請求
-            var request = {
-                origin: userLocationMarker.getPosition(), // 起點位置為用戶的當前位置
-                destination: destination,
-                travelMode: 'DRIVING'
-            };
-
-            // 發送路線請求
-            directionsService.route(request, function(result, status) {
-                if (status == 'OK') {
-                    directionsRenderer.setDirections(result);
-                    var route = result.routes[0];
-                    var duration = route.legs[0].duration.text;
-                    document.getElementById('duration').innerHTML = 'Estimated time: ' + duration;
-                } else {
-                    window.alert('Directions request failed due to ' + status);
-                }
-            });
-        }
-
-        function handleLocationError(browserHasGeolocation, userLocation) {
-            var infoWindow = new google.maps.InfoWindow();
-            infoWindow.setPosition(userLocation);
-            infoWindow.setContent(browserHasGeolocation ?
-                                  'Error: The Geolocation service failed.' :
-                                  'Error: Your browser doesn\'t support geolocation.');
-            infoWindow.open(map);
-        }
     </script>
-
-
-
 
     <div id="chat-container">
         <div id="chat-box"></div>
