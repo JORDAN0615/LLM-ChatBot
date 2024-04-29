@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLMChatBot & Google Maps Route</title>
+    <title>Chatbot UI</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB48k5aaUnPy6nk6kCieR5O3oZNkIGP7c0&callback=initMap" async defer></script>
     <style>
         body {
@@ -28,7 +28,6 @@
             margin-left: 0px; /* 與地圖間的間距 */
             float: right; /* 對話框放在右側 */
         }
-
 
         #chat-box {
             height: 70vh;
@@ -88,7 +87,8 @@
             padding: 10px;
             border-radius: 10px;
         }
-</style>
+
+    </style>
 </head>
 <body>
     <div id="map-container">
@@ -166,6 +166,9 @@
         }
     </script>
 
+
+
+
     <div id="chat-container">
         <div id="chat-box"></div>
         <input type="text" id="user-input" placeholder="Type a message..." onkeydown="if(event.keyCode==13){sendMessage();}">
@@ -175,8 +178,11 @@
     <script>
         function sendMessage() {
             var message = document.getElementById("user-input").value;
-            document.getElementById("chat-box").innerHTML += "<p>You: " + message + "</p>";
-            
+            var chatBox = document.getElementById("chat-box");
+
+            // Display user message in the chat box
+            chatBox.innerHTML += "<p>You: " + message + "</p>";
+
             // Send user input to Flask API
             fetch('/LLMChat1', {
                 method: 'POST',
@@ -186,19 +192,20 @@
                 body: JSON.stringify({
                     message: message
                 })
-            })
+            })  
             .then(response => response.json())
             .then(data => {
                 var chatBotResponse = data.response;
-                document.getElementById("chat-box").innerHTML += "<p>" + chatBotResponse + "</p>";
-                document.getElementById("user-input").value = ''; // 清空输入框
-                // 自动滚动到底部
-                var chatBox = document.getElementById("chat-box");
+                chatBotResponse = JSON.stringify(chatBotResponse);
+                // Display chatbot response in the chat box
+                chatBox.innerHTML += "<p>Chatbot: " + chatBotResponse + "</p>";
+                // Clear the user input field
+                document.getElementById("user-input").value = '';
+                // Scroll to the bottom of the chat box
                 chatBox.scrollTop = chatBox.scrollHeight;
             })
             .catch(error => console.error('Error:', error));
         }
     </script>
-    
 </body>
 </html>

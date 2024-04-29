@@ -20,6 +20,8 @@ from langchain_openai import ChatOpenAI
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.schema.agent import AgentFinish
 from langchain.schema.runnable import RunnablePassthrough
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+
 
 app = Flask(__name__)
 
@@ -33,15 +35,15 @@ class OpenGoogleMapInput:
         self.longitude = longitude
 
 @tool
-def get_Restaurant_Info(latitude: float, longitude: float) -> dict:
-    """Fetch current restaurant for given coordinates."""
+def get_restaurant_info(latitude: float, longitude: float) -> dict:
+    """Fetch current restaurants for given coordinates."""
 
     BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
     params = {
         'location': f"{latitude},{longitude}",
         'radius': 1000,
-        'type': ['restaurant'],
+        'keyword': '餐廳',  # 使用關鍵字搜索
         'key': api_key,
         'language': 'zh-TW'
     }
@@ -51,10 +53,7 @@ def get_Restaurant_Info(latitude: float, longitude: float) -> dict:
     if response.status_code == 200:
         results = response.json()
         restaurants = []
-        count = 0
-        for result in results.get('results', []):
-            if count >= 5:
-                break
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
             restaurant_info = {
                 'name': result.get('name', ''),
                 'location': result.get('vicinity', ''),
@@ -62,23 +61,27 @@ def get_Restaurant_Info(latitude: float, longitude: float) -> dict:
                 # 可根据需要提取其他信息
             }
             restaurants.append(restaurant_info)
-            count = count + 1
-            
-        return f'附近有一些不錯的餐廳可以去試試看，包括{restaurants[0]["name"]}({restaurants[0]["rating"]}星)、{restaurants[1]["name"]}({restaurants[1]["rating"]}星)、{restaurants[2]["name"]}({restaurants[2]["rating"]}星)、{restaurants[3]["name"]}({restaurants[3]["rating"]}星)、{restaurants[4]["name"]}({restaurants[4]["rating"]}星)等。'
+        
+        if restaurants:
+            restaurant_info_str = ", ".join([f"{restaurant['name']}({restaurant['rating']}星)" for restaurant in restaurants])
+            return f'附近有一些不錯的餐廳可以去試試看，包括{restaurant_info_str}等。'
+        else:
+            return '附近沒有找到餐廳。'
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
 
+
 @tool
-def get_Cafe_Info(latitude: float, longitude: float) -> dict:
-    """Fetch current restaurant for given coordinates."""
+def get_ramen(latitude: float, longitude: float) -> dict:
+    """Fetch current ramen restaurants for given coordinates."""
 
     BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
     params = {
         'location': f"{latitude},{longitude}",
-        'radius': 2000,
-        'type': ['cafe'],
+        'radius': 800,
+        'keyword': '拉麵',  # 修改為單個關鍵字字符串
         'key': api_key,
         'language': 'zh-TW'
     }
@@ -87,35 +90,109 @@ def get_Cafe_Info(latitude: float, longitude: float) -> dict:
     
     if response.status_code == 200:
         results = response.json()
-        cafe = []
-        count = 0
-        for result in results.get('results', []):
-            if count >= 5:
-                break
-            cafe_info = {
+        ramen_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            restaurant_info = {
                 'name': result.get('name', ''),
                 'location': result.get('vicinity', ''),
                 'rating': result.get('rating', ''),
-                # 可根据需要提取其他信息
+                # 可根據需要提取其他信息
             }
-            cafe.append(cafe_info)
-            count = count + 1
-              
-        return f'附近有一些不錯的咖啡廳可以去試試看，包括{cafe[0]["name"]}({cafe[0]["rating"]}星)、{cafe[1]["name"]}({cafe[1]["rating"]}星)、{cafe[2]["name"]}({cafe[2]["rating"]}星)、{cafe[3]["name"]}({cafe[3]["rating"]}星)、{cafe[4]["name"]}({cafe[4]["rating"]}星)等。'
+            ramen_info.append(restaurant_info)
+        
+        if ramen_info:
+            restaurant_info_str = ", ".join([f"{restaurant['name']}({restaurant['rating']}星)" for restaurant in ramen_info])
+            return f'附近有一些不錯的拉麵店可以去試試看，包括{restaurant_info_str}等。'
+        else:
+            return '附近沒有找到拉麵店。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+
+
+
+@tool
+def get_porkRice(latitude: float, longitude: float) -> dict:
+    """Fetch current restaurant for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 800,
+        'keyword': '滷肉飯',  # 修改為單個關鍵字字符串
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        results = response.json()
+        porkRice_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            restaurant_info = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根據需要提取其他信息
+            }
+            porkRice_info.append(restaurant_info)
+        
+        if porkRice_info:
+            restaurant_info_str = ", ".join([f"{info['name']}({info['rating']}星)" for info in porkRice_info])
+            return f'附近有一些不錯的滷肉飯可以去試試看，包括{restaurant_info_str}等。'
+        else:
+            return '附近沒有找到滷肉飯店。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+
+@tool
+def get_Cafe_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current cafe for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 800,
+        'keyword': '咖啡廳',  # 修改為單個關鍵字字符串
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        results = response.json()
+        cafe_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            cafe = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根據需要提取其他信息
+            }
+            cafe_info.append(cafe)
+        
+        if cafe_info:
+            cafe_info_str = ", ".join([f"{cafe['name']}({cafe['rating']}星)" for cafe in cafe_info])
+            return f'附近有一些不錯的咖啡廳可以去試試看，包括{cafe_info_str}等。'
+        else:
+            return '附近沒有找到咖啡廳。'
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
 
 @tool
 def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
-    """Fetch current restaurant for given coordinates."""
+    """Fetch current tourist attractions for given coordinates."""
 
     BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
     params = {
         'location': f"{latitude},{longitude}",
-        'radius': 8000,
-        'type': ['tourist_attraction'],
+        'radius': 5000,
+        'keyword': '旅遊景點',  # 修改為單個關鍵字字符串
         'key': api_key,
         'language': 'zh-TW'
     }
@@ -124,70 +201,62 @@ def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
     
     if response.status_code == 200:
         results = response.json()
-        tourist_attraction = []
-        count = 0
-        for result in results.get('results', []):
-            if count >= 5:
-                break
-            tourist_attraction_info = {
+        tourist_attraction_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            attraction = {
                 'name': result.get('name', ''),
                 'location': result.get('vicinity', ''),
                 'rating': result.get('rating', ''),
-                # 可根据需要提取其他信息
+                # 可根據需要提取其他信息
             }
-            tourist_attraction.append(tourist_attraction_info)
-            count = count + 1
-            
-        return f'附近有一些不錯的旅遊景點可以去試試看，包括{tourist_attraction[0]["name"]}({tourist_attraction[0]["rating"]}星)、{tourist_attraction[1]["name"]}({tourist_attraction[1]["rating"]}星)、{tourist_attraction[2]["name"]}({tourist_attraction[2]["rating"]}星)、{tourist_attraction[3]["name"]}({tourist_attraction[3]["rating"]}星)、{tourist_attraction[4]["name"]}({tourist_attraction[4]["rating"]}星)等。'
+            tourist_attraction_info.append(attraction)
+        
+        if tourist_attraction_info:
+            attraction_info_str = ", ".join([f"{attraction['name']}({attraction['rating']}星)" for attraction in tourist_attraction_info])
+            return f'附近有一些不錯的旅遊景點可以去試試看，包括{attraction_info_str}等。'
+        else:
+            return '附近沒有找到旅遊景點。'
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
-tools = [get_Cafe_Info, get_Restaurant_Info, get_tourist_attraction_Info]
 
+tools = [get_Cafe_Info, get_restaurant_info, get_tourist_attraction_Info, get_ramen, get_porkRice]
 functions = [format_tool_to_openai_function(f) for f in tools]
-
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are helpful assistant who can recommend place to go"),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-
-model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0).bind(functions=functions)
-
-chain = prompt | model | OpenAIFunctionsAgentOutputParser()
-
-agent_chain = RunnablePassthrough.assign(
-    agent_scratchpad= lambda x: format_to_openai_functions(x["intermediate_steps"])
-) | chain
+llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+agent = create_tool_calling_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 def run_agent(user_input):
-    intermediate_steps = []
-    while True:
-        result = agent_chain.invoke({
+    result = agent_executor.invoke({
             "input": user_input, 
-            "intermediate_steps": intermediate_steps
-        })
-        if isinstance(result, AgentFinish):
-            # return result
-            return intermediate_steps[-1][1]
-        tool = {
-            "get_Restaurant_Info": get_Restaurant_Info, 
-            "get_Cafe_Info": get_Cafe_Info,
-            "get_tourist_attraction_Info": get_tourist_attraction_Info
-        }[result.tool]
-        
-        observation = tool.run(result.tool_input)
-        intermediate_steps.append((result, observation))
-# chatbot_response = run_agent("台南成功大學附近美食")
-# print(chatbot_response)
+    })
+    return result  
+
+def format_response(response):
+    # 將換行符號插入到回應文本中
+    formatted_response = response['output'].replace('\n', '\n\n')  # 在每個換行前插入一個額外的換行符號
+    return formatted_response
+
+# input_message = "推薦花蓮一日行程"
+# chatbot_response = run_agent(input_message)
+# formatted_response = format_response(chatbot_response)
+# print(formatted_response)
 
 @app.route('/LLMChat1', methods=['POST'])
 def LLMChat():
     user_input = request.json.get('message')
     if user_input:
         response = run_agent(user_input)
-        return jsonify({'response': response})
+        formatted_response = format_response(response)
+        # 去掉回應中的引號
+        formatted_response = formatted_response.replace('"', '')
+        return jsonify({'response': formatted_response})
     else:
         return jsonify({'response': 'Error: No message provided'}), 400
 
