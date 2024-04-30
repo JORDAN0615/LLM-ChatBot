@@ -147,6 +147,77 @@ def get_porkRice(latitude: float, longitude: float) -> dict:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
 @tool
+def get_korean_restaurant_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current restaurant for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 800,
+        'keyword': '韓式料理',  # 修改為單個關鍵字字符串
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    respose = requests.get(BASE_URL, params=params)
+
+    if respose.status_code == 200:
+        results = respose.json()
+        korean_restaurant_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            korean_restaurant = {
+                'name' :result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根據需要提取其他信息 
+            }
+            korean_restaurant_info.append(korean_restaurant)
+        if korean_restaurant_info:
+            korean_restaurant_info_str = ", ".join([f"{korean_restaurant['name']}({korean_restaurant['rating']}星)" for korean_restaurant in korean_restaurant_info])
+            return f'附近有一些不錯的韓式料理可以去試試看，包括{korean_restaurant_info_str}等。'
+        else:
+            return '附近沒有找到韓式料理店。'
+    else:
+        raise Exception(f"API Request failed with status code: {respose.status_code}")
+    
+@tool
+def get_burger_restaurant_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current burger for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 800,
+        'keyword': '漢堡',  # 修改為單個關鍵字字符串
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+    
+    if response.status_code == 200:
+        results = response.json()
+        burger_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            burger = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根據需要提取其他信息
+            }
+            burger_info.append(burger)
+        if burger_info:
+            burger_info_str = ", ".join([f"{burger['name']}({burger['rating']}星)" for burger in burger_info])
+            return f'附近有一些不錯的漢堡可以去試試看，包括{burger_info_str}等。'
+        else:
+            return '附近沒有找到漢堡店。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+
+
+@tool
 def get_Cafe_Info(latitude: float, longitude: float) -> dict:
     """Fetch current cafe for given coordinates."""
 
@@ -220,7 +291,7 @@ def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
 
-tools = [get_Cafe_Info, get_restaurant_info, get_tourist_attraction_Info, get_ramen, get_porkRice]
+tools = [get_Cafe_Info, get_restaurant_info, get_tourist_attraction_Info, get_ramen, get_porkRice, get_korean_restaurant_Info, get_burger_restaurant_Info]  
 functions = [format_tool_to_openai_function(f) for f in tools]
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are helpful assistant who can recommend place to go"),
@@ -239,8 +310,23 @@ def run_agent(user_input):
     return result  
 
 def format_response(response):
-    # 將換行符號插入到回應文本中
-    formatted_response = response['output'].replace('\n', '\n\n')  # 在每個換行前插入一個額外的換行符號
+    formatted_response = response['output']
+    
+    # 將換行符號替換為HTML的換行標籤
+    formatted_response = formatted_response.replace('\n\n\n\n', '<br>')  # 替換多個換行為一個HTML換行標籤
+    formatted_response = formatted_response.replace('\n', '<br>')  # 替換單個換行為一個HTML換行標籤
+    
+    # 將標題添加到各區域
+    formatted_response = formatted_response.replace('###', '<h3>')  # 將###替換為HTML標題標籤
+    formatted_response = formatted_response.replace('###', '</h3>')  # 將###替換為HTML標題標籤
+    
+    # 將星號內容加粗
+    formatted_response = formatted_response.replace('**', '<strong>')  # 將**替換為HTML加粗標籤
+    formatted_response = formatted_response.replace('**', '</strong>')  # 將**替換為HTML加粗標籤
+    
+    # 將回應文本的字體大小設置為較小的尺寸
+    formatted_response = '<span style="font-size: smaller;">' + formatted_response + '</span>'
+    
     return formatted_response
 
 # input_message = "推薦花蓮一日行程"
