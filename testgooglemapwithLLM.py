@@ -253,6 +253,84 @@ def get_Cafe_Info(latitude: float, longitude: float) -> dict:
     else:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
+@tool
+def get_drinks_Info(latitude: float, longitude: float) -> dict:
+    """Fetch current drinks for given coordinates."""
+
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        'location': f"{latitude},{longitude}",
+        'radius': 800,
+        'keyword': '飲料',  # 修改為單個關鍵字字符串
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request
+    response = requests.get(BASE_URL, params=params)
+
+    if response.status_code == 200:
+        results = response.json()
+        drinks_info = []
+        for result in results.get('results', [])[:5]:  # 只處理前五個結果
+            drinks = {
+                'name': result.get('name', ''),
+                'location': result.get('vicinity', ''),
+                'rating': result.get('rating', ''),
+                # 可根據需要提取其他信息
+            }
+            drinks_info.append(drinks)
+        
+        if drinks_info:
+            drinks_info_str = ", ".join([f"{drinks['name']}({drinks['rating']}星)" for drinks in drinks_info])
+            return f'附近有一些不錯的飲料可以去試試看，包括{drinks_info_str}等。'
+        else:
+            return '附近沒有找到飲料。'
+    else:
+        raise Exception(f"API Request failed with status code: {response.status_code}")
+@tool
+def get_restaurant_reviews(restaurant_name: str) -> str:
+    """Fetch reviews for a specific restaurant."""
+    
+    BASE_URL = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
+
+    params = {
+        'input': restaurant_name,
+        'inputtype': 'textquery',
+        'fields': 'place_id',
+        'key': api_key,
+        'language': 'zh-TW'
+    }
+    # Make the request to find the place ID
+    response = requests.get(BASE_URL, params=params)
+
+    if response.status_code == 200:
+        results = response.json()
+        place_id = results.get('candidates', [])[0].get('place_id') if results.get('candidates', []) else None
+        
+        if place_id:
+            reviews_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&fields=name,reviews&key={api_key}"
+            reviews_response = requests.get(reviews_url)
+            if reviews_response.status_code == 200:
+                reviews_data = reviews_response.json()
+                restaurant_name = reviews_data.get('result', {}).get('name', '')
+                restaurant_reviews_info = reviews_data.get('result', {}).get('reviews', [])
+                
+                if restaurant_reviews_info:
+                    reviews_str = "\n\n".join([f"評論者: {review['author_name']}, 評分: {review['rating']}星, 評論: {review['text']}" for review in restaurant_reviews_info])
+                    return f'{restaurant_name} 的評論如下：\n\n{reviews_str}'
+                else:
+                    return f"{restaurant_name} 目前還沒有評論。"
+            else:
+                raise Exception(f"Reviews API Request failed with status code: {reviews_response.status_code}")
+        else:
+            return f"找不到名為 {restaurant_name} 的餐廳。"
+    else:
+        raise Exception(f"Place ID API Request failed with status code: {response.status_code}")
+
+
+
+
 
 @tool
 def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
@@ -291,7 +369,7 @@ def get_tourist_attraction_Info(latitude: float, longitude: float) -> dict:
         raise Exception(f"API Request failed with status code: {response.status_code}")
 
 
-tools = [get_Cafe_Info, get_restaurant_info, get_tourist_attraction_Info, get_ramen, get_porkRice, get_korean_restaurant_Info, get_burger_restaurant_Info]  
+tools = [get_Cafe_Info, get_restaurant_info, get_tourist_attraction_Info, get_ramen, get_porkRice, get_korean_restaurant_Info, get_restaurant_reviews ,get_burger_restaurant_Info, get_drinks_Info]  
 functions = [format_tool_to_openai_function(f) for f in tools]
 prompt = ChatPromptTemplate.from_messages([
     ("system", "You are helpful assistant who can recommend place to go"),
