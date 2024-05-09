@@ -21,6 +21,7 @@ from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.schema.agent import AgentFinish
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.memory import ConversationBufferMemory
 
 
 app = Flask(__name__)
@@ -68,7 +69,7 @@ def get_nearby_places(latitude: float, longitude: float, keyword: str) -> dict:
         else:
             return f'附近沒有找到{keyword}。'
     else:
-        raise Exception(f"API Request failed with status code: {response.status_code}")
+        raise Exception(f"API request failed with status code: {response.status_code}")
 
 # 取得某地點附近的資訊與各自評論
 @tool
@@ -87,7 +88,6 @@ def get_reviews_nearby(latitude: float, longitude: float, keyword: str) -> str:
     }
     # Make the request
     response = requests.get(BASE_URL, params=params)
-    
     if response.status_code == 200:
         results = response.json().get('results', [])[:5]  # 只處理前五個結果
         for result in results:
@@ -184,15 +184,17 @@ functions = [format_tool_to_openai_function(f) for f in tools]
 prompt = ChatPromptTemplate.from_messages([
     (   
         "system", 
-        "You are helpful assistant who can search google information for any question and also u can recommend me a place to go from google map"
+        "You are a versatile assistant with variable response methods, who can search google information for any question and u can recommend user any place to go from google map"
     ),
+    MessagesPlaceholder(variable_name="chat_history"),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=1.0)
 agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+memory = ConversationBufferMemory(return_messages=True,memory_key="chat_history")
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, memory=memory)  # 将记忆功能添加到 AgentExecutor
 
 def run_agent(user_input):
     result = agent_executor.invoke({
