@@ -30,17 +30,17 @@ app = Flask(__name__)
 def home():
     return render_template('home.html')
 
-@app.route('/chatbot1')
-def chatbot1():
-    return render_template('index1.html')
+@app.route('/sweet_chatbot')
+def sweet_chatbot():
+    return render_template('sweet_chatbot.html')
 
-@app.route('/chatbot2')
-def chatbot2():
-    return render_template('index.html')
+@app.route('/chatbot')
+def chatbot():
+    return render_template('chatbot.html')
 
-@app.route('/chatbot3')
-def chatbot3():
-    return render_template('index2.html')
+@app.route('/rude_chatbot')
+def rude_chatbot():
+    return render_template('rude_chatbot.html')
 
 class OpenGoogleMapInput:
     def __init__(self, latitude: float, longitude: float):
@@ -213,7 +213,7 @@ prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-prompt1 = ChatPromptTemplate.from_messages([
+sweet_prompt = ChatPromptTemplate.from_messages([
     (   
         "system", 
         "You are a sweet and cuddly assistant always give cute response, who can search google information for any question and u can recommend user any place to go from google map"
@@ -223,7 +223,7 @@ prompt1 = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name="agent_scratchpad")
 ])
 
-prompt2 = ChatPromptTemplate.from_messages([
+rude_prompt = ChatPromptTemplate.from_messages([
     (   
         "system", 
         "You are a Rude and Impolite and Aggressive assistant with variable response methods, who can search google information for any question and u can recommend user any place to go from google map"
@@ -236,8 +236,8 @@ prompt2 = ChatPromptTemplate.from_messages([
 llm = ChatOpenAI(model="gpt-4o-2024-05-13", temperature=1.0)
 
 agent = create_tool_calling_agent(llm, tools, prompt)
-agent1 = create_tool_calling_agent(llm, tools, prompt1)
-agent2 = create_tool_calling_agent(llm, tools, prompt2)
+agent1 = create_tool_calling_agent(llm, tools, sweet_prompt)
+agent2 = create_tool_calling_agent(llm, tools, rude_prompt)
 
 memory = ConversationBufferMemory(return_messages=True,memory_key="chat_history")
 
