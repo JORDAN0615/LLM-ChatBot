@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            position: relative;
+        }
+
+        .container {
+            position: relative;
+            max-width: 100%; /* 調整容器的寬度以適應圖片 */
+        }
+
+        .photo {
+            width: 100%;
+            height: 99.9vh;
+            display: block;
+            z-index: 2; /* 確保圖片在上層 */
+        }
+
+        .button-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            /* z-index: 2; 將按鈕放在圖片上方 */
+        }
+
+        .button-container button {
+            width: calc(33.33% - 1px); /* 每個按鈕佔 container 寬度的 33.33%，減去間距 */
+            background-color: transparent; /* 更改按鈕背景顏色 */
+            color: #fff; /* 更改按鈕文字顏色 */
+            border: none; /* 移除按鈕邊框 */
+            padding: 0px; /* 添加內邊距 */
+            cursor: pointer; /* 更改滑鼠游標為手指 */
+            transition: background-color 0.3s; /* 添加漸變效果 */
+        }
+
+        .button-container button:hover {
+            background-color: rgba(0, 0, 0, 0.186); /* 滑鼠懸停時的半透明背景顏色 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='homepic.jpg') }}" alt="展示圖片" class="photo">
+        <div class="button-container">
+            <button onclick="goToUrl('/chatbot1')"></button>
+            <button onclick="goToUrl('/chatbot2')"></button>
+            <button onclick="goToUrl('/chatbot3')"></button>
+        </div>
+    </div>
+    <script>
+        function goToUrl(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
