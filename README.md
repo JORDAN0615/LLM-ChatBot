@@ -1,7 +1,7 @@
 # LangChain Chatbot with Google Maps Integration
 
 ## Overview
-This project implements a chatbot using OpenAI's GPT-3.5 language model integrated with Google Maps API to provide information about nearby restaurants, cafes, bars, and tourist attractions. The chatbot is built using Python and Flask.
+This project implements a chatbot using OpenAI's GPT-4o language model integrated with Google Maps API to provide information about nearby restaurants, cafes, bars, and tourist attractions. The chatbot is built using Python and Flask.
 
 ## Features
 - Provides recommendations for restaurants, cafes, bars, and tourist attractions based on user input.
@@ -12,7 +12,7 @@ This project implements a chatbot using OpenAI's GPT-3.5 language model integrat
 ## Installation
 1. Clone the repository:
    ```
-   git clone https://github.com/your_username/langchain-chatbot.git
+   git clone https://github.com/your_username/LLM-Chatbot.git
    ```
 2. Navigate to the project directory:
    ```
