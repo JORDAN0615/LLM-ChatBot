@@ -25,8 +25,11 @@ from langchain.memory import ConversationBufferMemory
 
 
 app = Flask(__name__)
-
 @app.route('/')
+def entryPoint():
+    return render_template('entry.html')
+
+@app.route('/home')
 def home():
     return render_template('home.html')
 

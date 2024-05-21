@@ -7,7 +7,7 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB48k5aaUnPy6nk6kCieR5O3oZNkIGP7c0&callback=initMap" async defer></script>
     <style>
         body {
-            background-color: #333; /* 深灰色背景 */
+            background-color: rgba(0, 0, 0, 0.773); /* 深灰色背景 */
             color: white; /* 白色文字 */
             font-family: Arial, sans-serif;
             margin: 0;
@@ -114,7 +114,7 @@
         <form id="searchForm">
             <label for="destination">輸入目的地：</label>
             <input type="text" id="destination" name="destination">
-            <button type="submit" class="submit-button">calculate</button>
+            <button type="submit" class="submit-button">Calculate</button>
         </form>
         <div id="duration"></div>
     </div>
@@ -122,18 +122,35 @@
         var map, directionsService, directionsRenderer, userLocationMarker;
 
         function initMap() {
-            var initialLocation = { lat: 25.032969, lng: 121.565418 };
+            var initialLocation = { lat: 25.032969, lng: 121.565418 }; // 臺北101的坐標
             map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 14
+                zoom: 14,
+                center: initialLocation
             });
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
 
-            // 添加地圖點擊事件監聽器
-            map.addListener('click', function(event) {
-                calculateRoute(event.latLng);
-            });
+            // 獲取使用者的當前位置
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    map.setCenter(userLocation);
+                    userLocationMarker = new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        title: 'Your Location'
+                    });
+                }, function() {
+                    handleLocationError(true, map.getCenter());
+                });
+            } else {
+                // 瀏覽器不支持地理位置
+                handleLocationError(false, map.getCenter());
+            }
 
             // 監聽表單提交事件
             document.getElementById('searchForm').addEventListener('submit', function(event) {
@@ -165,12 +182,6 @@
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    map.setCenter(userLocation);
-                    userLocationMarker = new google.maps.Marker({
-                        position: userLocation,
-                        map: map,
-                        title: 'Your Location'
-                    });
 
                     // 設置路線請求
                     var request = {
@@ -185,30 +196,28 @@
                             directionsRenderer.setDirections(result);
                             var route = result.routes[0];
                             var duration = route.legs[0].duration.text;
-                                document.getElementById('duration').innerHTML = 'Estimated time: ' + duration;
-                            } else {
+                            document.getElementById('duration').innerHTML = 'Estimated time: ' + duration;
+                        } else {
                             window.alert('Directions request failed due to ' + status);
                         }
                     });
-
                 }, function() {
                     handleLocationError(true, map.getCenter());
                 });
-                } else {
-                    // 瀏覽器不支持地理位置
-                    handleLocationError(false, map.getCenter());
-                }
+            } else {
+                // 瀏覽器不支持地理位置
+                handleLocationError(false, map.getCenter());
             }
+        }
 
-            function handleLocationError(browserHasGeolocation, userLocation) {
-                var infoWindow = new google.maps.InfoWindow();
-                infoWindow.setPosition(userLocation);
-                infoWindow.setContent(browserHasGeolocation ?
-                                    'Error: The Geolocation service failed.' :
-                                    'Error: Your browser doesn\'t support geolocation.');
-                infoWindow.open(map);
-            }
-
+        function handleLocationError(browserHasGeolocation, userLocation) {
+            var infoWindow = new google.maps.InfoWindow();
+            infoWindow.setPosition(userLocation);
+            infoWindow.setContent(browserHasGeolocation ?
+                                  'Error: The Geolocation service failed.' :
+                                  'Error: Your browser doesn\'t support geolocation.');
+            infoWindow.open(map);
+        }
     </script>
 
     <div id="chat-container">

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        html, body {
+            height: 100%;  /* 確保整個頁面的高度 */
+            margin: 0;     /* 移除預設的邊距 */
+            overflow: hidden; /* 隱藏視窗溢出的部分 */
+        }
+
+        .background-image {
+            width: 100%;
+            height: 100%;
+            background-image: url('{{ url_for('static', filename='entryPic.jpg') }}');
+            background-size: cover;  /* 背景圖片填滿整個視窗 */
+            background-position: center;  /* 背景圖片置中 */
+            background-repeat: no-repeat;  /* 不重複顯示 */
+            position: relative; /* 設置相對位置，以便子元素使用絕對位置 */
+        }
+
+        .photo {
+            position: absolute; /* 使用絕對位置 */
+            top: 50%; /* 距離父元素頂部的距離 */
+            left: 50%; /* 距離父元素左邊的距離 */
+            transform: translate(-50%, -50%); /* 將圖片置中 */
+            width: 60%; /* 40% 的視窗寬度 */
+            height: auto; /* 自動調整高度 */
+        }
+
+        /* 響應式設計：針對較小的裝置進行調整 */
+        @media (max-width: 768px) {
+            .background-image {
+                background-size: contain; /* 在小屏幕上，背景圖片等比例縮放以完整顯示 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-image">
+        <a onclick="goToUrl('/home')">
+            <img src="{{ url_for('static', filename='tryNow.png') }}" alt="展示圖片" class="photo">
+        </a>
+    </div>
+    <script>
+        function goToUrl(url) {
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
+

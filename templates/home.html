@@ -3,70 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=CwTeXYen&display=swap">
     <title></title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            position: relative;
+    <style> 
+        html, body {
+          margin: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background-color: rgb(98, 104, 104);
         }
-
-        .container {
-            position: relative;
-            max-width: 100%; /* 調整容器的寬度以適應圖片 */
+    
+        .cat {
+          width: 300px;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: 100px;
+          transition: 0.5s;
         }
-
-        .photo {
-            width: 100%;
-            height: 99.9vh;
-            display: block;
-            z-index: 2; /* 確保圖片在上層 */
+    
+        .talk {
+          width: 1000px;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: 0px;
+          transition: 0.5s;
+          pointer-events: none;
+          display: none; /* 初始状态隐藏 */
         }
-
-        .button-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: space-between;
-            /* z-index: 2; 將按鈕放在圖片上方 */
+    
+        #cat_blue {
+          left: 20%;
         }
-
-        .button-container button {
-            width: calc(33.33% - 1px); /* 每個按鈕佔 container 寬度的 33.33%，減去間距 */
-            background-color: transparent; /* 更改按鈕背景顏色 */
-            color: #fff; /* 更改按鈕文字顏色 */
-            border: none; /* 移除按鈕邊框 */
-            padding: 0px; /* 添加內邊距 */
-            cursor: pointer; /* 更改滑鼠游標為手指 */
-            transition: background-color 0.3s; /* 添加漸變效果 */
+        #talk_blue {
+          left: 40%;
         }
-
-        .button-container button:hover {
-            background-color: rgba(0, 0, 0, 0.186); /* 滑鼠懸停時的半透明背景顏色 */
+    
+        #cat_yellow {
+          left: 50%;
         }
-    </style>
+        #talk_yellow {
+          left: 50%;
+        }
+    
+        #cat_grey {
+          left: 80%;
+        }
+        #talk_grey {
+          left: 60%;
+        }
+    
+        #cross {
+          position: absolute;
+          pointer-events: none; /* 确保鼠标事件不会影响 cross */
+        }
+    
+        #cross:before, #cross:after {
+          content: "";
+          display: block;
+          width: 60px;
+          height: 15px;
+          background-color: #fff;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+    
+        #cross:after {
+          transform: translate(-50%, -50%) rotate(-45deg);
+        }
+    
+        p {
+          text-align: center;
+          font-size: 50px;
+          font-family: 'CwTeXYen', sans-serif; /* 使用 Google Fonts 的 cwTeXYen 字體 */
+        }
+      </style>
 </head>
 <body>
-    <div class="container">
-        <img src="{{ url_for('static', filename='homepic.jpg') }}" alt="展示圖片" class="photo">
-        <div class="button-container">
-            <button onclick="goToUrl('/sweet_chatbot')"></button>
-            <button onclick="goToUrl('/chatbot')"></button>
-            <button onclick="goToUrl('/rude_chatbot')"></button>
-        </div>
-    </div>
+    <p><b>- 試試點擊不同風格的機器人 -</b></p>
+    <a onclick="goToUrl('/sweet_chatbot')">
+        <img class="cat" id="cat_blue" src="{{ url_for('static', filename='cute.png') }}" alt="展示圖片" class="photo">
+    </a>
+    <a onclick="goToUrl('/chatbot')">
+        <img class="cat" id="cat_yellow" src="{{ url_for('static', filename='normal.png') }}" alt="展示圖片" class="photo">
+    </a>
+    <a onclick="goToUrl('/rude_chatbot')">
+        <img class="cat" id="cat_grey" src="{{ url_for('static', filename='rude.png') }}" alt="展示圖片" class="photo">
+    </a>
+    <img class="talk" id="talk_blue" src="{{ url_for('static', filename='cuteWord.png') }}" alt="展示圖片">
+    <img class="talk" id="talk_yellow" src="{{ url_for('static', filename='normalWord.png') }}" alt="展示圖片">
+    <img class="talk" id="talk_grey" src="{{ url_for('static', filename='rudeWord.png') }}" alt="展示圖片">
+
     <script>
         function goToUrl(url) {
             window.location.href = url;
         }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(window).mousemove(function(evt){
+        var x = evt.pageX;
+        var y = evt.pageY;
+
+        $("#cross").css("left", x + "px");
+        $("#cross").css("top", y + "px");
+
+        // 控制 cat_blue 和 talk_blue
+        var catplace = $("#cat_blue").offset().left + $("#cat_blue").width() / 2;
+        if (Math.abs(x - catplace) < 80) {
+          $("#cat_blue").css("bottom", "0px");
+          $("#talk_blue").css("display", "block");
+        } else {
+          $("#cat_blue").css("bottom", "-50px");
+          $("#talk_blue").css("display", "none");
+        }
+
+        // 控制 cat_yellow 和 talk_yellow
+        catplace = $("#cat_yellow").offset().left + $("#cat_yellow").width() / 2;
+        if (Math.abs(x - catplace) < 80) {
+          $("#cat_yellow").css("bottom", "0px");
+          $("#talk_yellow").css("display", "block");
+        } else {
+          $("#cat_yellow").css("bottom", "-50px");
+          $("#talk_yellow").css("display", "none");
+        }
+
+        // 控制 cat_grey 和 talk_grey
+        catplace = $("#cat_grey").offset().left + $("#cat_grey").width() / 2;
+        if (Math.abs(x - catplace) < 80) {
+          $("#cat_grey").css("bottom", "0px");
+          $("#talk_grey").css("display", "block");
+        } else {
+          $("#cat_grey").css("bottom", "-50px");
+          $("#talk_grey").css("display", "none");
+        }
+      });
     </script>
 </body>
 </html>
