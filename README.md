@@ -16,7 +16,7 @@ This project implements a chatbot using OpenAI's GPT-4o language model integrate
    ```
 2. Navigate to the project directory:
    ```
-   cd langchain-chatbot
+   cd LLM-Chatbot
    ```
 3. Install dependencies:
    ```
