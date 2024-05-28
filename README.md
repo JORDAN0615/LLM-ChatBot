@@ -3,7 +3,7 @@
 ## Overview
 This project implements a chatbot using OpenAI's GPT-4o language model integrated with Google Maps API to provide information about nearby restaurants, cafes, bars, and tourist attractions. The chatbot is built using Python and Flask.
 
--powerpoint-https://www.canva.com/design/DAGB6FpB0Yk/5d-w-DI6heOVJPfzW1Esug/edit
+-PowerPoint-https://www.canva.com/design/DAGB6FpB0Yk/5d-w-DI6heOVJPfzW1Esug/edit
 
 
 ## Features
