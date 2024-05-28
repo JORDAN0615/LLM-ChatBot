@@ -28,6 +28,7 @@ This project implements a chatbot using OpenAI's GPT-4o language model integrate
      ```
      GOOGLE_MAPS_API_KEY=your_google_maps_api_key
      OPENAI_API_KEY=your_openai_api_key
+     GOOGLE_CX=your_google_cx
      ```
 
 ## Usage
